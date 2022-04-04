@@ -3,7 +3,9 @@ import java.util.ArrayList;
 
 public interface DataManipulation {
     public int importData();
+
     public int createTable();
+
     public void openDatasource();
 
     public void closeDatasource();
@@ -41,7 +43,8 @@ public interface DataManipulation {
         public Client(String[] info) {
             enterprise_name = info[1];
             country = info[3];
-            city = info[4];
+            if (!info[4].equals("NULL"))
+                city = info[4];
             industry = info[5];
         }
     }
