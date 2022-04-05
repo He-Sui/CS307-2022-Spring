@@ -1,5 +1,4 @@
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
@@ -11,7 +10,7 @@ import java.util.Set;
 public class DatabaseManipulation implements DataManipulation {
     private Connection con = null;
     private ResultSet resultSet;
-    private String host = "172.27.144.1";
+    private String host = "172.23.208.1";
     private String dbname = "contract";
     private String user = "checker";
     private String pwd = "123456";
@@ -213,17 +212,20 @@ public class DatabaseManipulation implements DataManipulation {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
         return result;
     }
 
     @Override
     public int importClient(ArrayList<Client> list) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("insert into Client (enterprise_name, country, industry, city) values ");
+        StringBuilder sql = new StringBuilder("(?,?,?,?)");
         int result = 0;
         int total = list.size();
-        final String sql = "insert into Client (enterprise_name, country, industry, city) values (?,?,?,?);";
-        for (int i = 0; i < total; ++i)
-            sb.append(sql);
+        for (int i = 0; i < total - 1; ++i)
+            sb.append(sql).append(',');
+        sb.append(sql).append(';');
         try {
             PreparedStatement preparedStatement = con.prepareStatement(sb.toString());
             int index = 1;
@@ -242,12 +244,13 @@ public class DatabaseManipulation implements DataManipulation {
 
     @Override
     public int importSupply(ArrayList<Supply> list) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("insert into Supply (area, director_firstname, director_surname) values ");
+        StringBuilder sql = new StringBuilder("(?,?,?)");
         int result = 0;
         int total = list.size();
-        final String sql = "insert into Supply (area, director_firstname, director_surname) values (?,?,?);";
-        for (int i = 0; i < total; ++i)
-            sb.append(sql);
+        for (int i = 0; i < total - 1; ++i)
+            sb.append(sql).append(',');
+        sb.append(sql).append(';');
         try {
             PreparedStatement preparedStatement = con.prepareStatement(sb.toString());
             int index = 1;
@@ -265,12 +268,13 @@ public class DatabaseManipulation implements DataManipulation {
 
     @Override
     public int importSalesman(ArrayList<Salesman> list) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("insert into salesman (number, firstname, surname, phone_number, gender, age) values ");
+        StringBuilder sql = new StringBuilder("(?,?,?,?,?,?)");
         int result = 0;
         int total = list.size();
-        final String sql = "insert into salesman (number, firstname, surname, phone_number, gender, age) values (?,?,?,?,?,?);";
-        for (int i = 0; i < total; ++i)
-            sb.append(sql);
+        for (int i = 0; i < total - 1; ++i)
+            sb.append(sql).append(',');
+        sb.append(sql).append(';');
         try {
             PreparedStatement preparedStatement = con.prepareStatement(sb.toString());
             int index = 1;
@@ -291,12 +295,13 @@ public class DatabaseManipulation implements DataManipulation {
 
     @Override
     public int importProduct(ArrayList<Product> list) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("insert into product (code, name) values ");
+        StringBuilder sql = new StringBuilder("(?,?)");
         int result = 0;
         int total = list.size();
-        final String sql = "insert into product (code, name) values (?,?);";
-        for (int i = 0; i < total; ++i)
-            sb.append(sql);
+        for (int i = 0; i < total - 1; ++i)
+            sb.append(sql).append(',');
+        sb.append(sql).append(';');
         try {
             PreparedStatement preparedStatement = con.prepareStatement(sb.toString());
             int index = 1;
@@ -313,12 +318,13 @@ public class DatabaseManipulation implements DataManipulation {
 
     @Override
     public int importModel(ArrayList<Model> list) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("insert into model (model, product_code) values ");
+        StringBuilder sql = new StringBuilder("(?,?)");
         int result = 0;
         int total = list.size();
-        final String sql = "insert into model (model, product_code) values (?,?);";
-        for (int i = 0; i < total; ++i)
-            sb.append(sql);
+        for (int i = 0; i < total - 1; ++i)
+            sb.append(sql).append(',');
+        sb.append(sql).append(';');
         try {
             PreparedStatement preparedStatement = con.prepareStatement(sb.toString());
             int index = 1;
@@ -335,16 +341,24 @@ public class DatabaseManipulation implements DataManipulation {
 
     @Override
     public int importOrder(ArrayList<Order> list) {
-        StringBuilder sb = new StringBuilder();
         int result = 0;
-        int total = list.size();
-        final String sql = "insert into orders (product_model, contract_number, salesman_number, quantity, unit_price, estimated_delivery_date, lodgement_date) values (?,?,?,?,?,?,?);";
-        for (int i = 0; i < total; ++i)
-            sb.append(sql);
         try {
-            PreparedStatement preparedStatement = con.prepareStatement(sb.toString());
+            PreparedStatement preparedStatement = con.prepareStatement("insert into orders (product_model, contract_number, salesman_number, quantity, unit_price, estimated_delivery_date, lodgement_date) values (?,?,?,?,?,?,?);");
             int index = 1;
-            for (Order order : list) {
+            for (int i = 0; i < list.size(); ++i) {
+                if (i % 4680 == 0) {
+                    if (i != 0)
+                        preparedStatement.executeUpdate();
+                    index = 1;
+                    StringBuilder sb = new StringBuilder("insert into orders (product_model, contract_number, salesman_number, quantity, unit_price, estimated_delivery_date, lodgement_date) values ");
+                    StringBuilder sql = new StringBuilder("(?,?,?,?,?,?,?)");
+                    int count = Math.min(list.size() - i - 1, 4679);
+                    for (int j = 0; j < count; ++j)
+                        sb.append(sql).append(',');
+                    sb.append(sql).append(';');
+                    preparedStatement = con.prepareStatement(sb.toString());
+                }
+                Order order = list.get(i);
                 preparedStatement.setString(index++, order.product_model);
                 preparedStatement.setString(index++, order.contract_number);
                 preparedStatement.setString(index++, order.salesman_number);
@@ -362,12 +376,14 @@ public class DatabaseManipulation implements DataManipulation {
 
     @Override
     public int importContract(ArrayList<Contract> list) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("insert into contract (number, client_name, supply_area, date) values ");
+        StringBuilder sql = new StringBuilder("(?,?,?,?)");
         int result = 0;
         int total = list.size();
-        final String sql = "insert into contract (number, client_name, supply_area, date) values (?,?,?,?);";
-        for (int i = 0; i < total; ++i)
-            sb.append(sql);
+        for (int i = 0; i < total - 1; ++i)
+            sb.append(sql).append(',');
+        sb.append(sql).append(';');
+
         try {
             PreparedStatement preparedStatement = con.prepareStatement(sb.toString());
             int index = 1;
