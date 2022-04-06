@@ -2,9 +2,9 @@ import java.sql.Date;
 import java.util.ArrayList;
 
 public interface DataManipulation {
-    public int importData();
+    public void importData();
 
-    public int createTable();
+    public void createTable();
 
     public void openDatasource();
 
@@ -20,19 +20,19 @@ public interface DataManipulation {
 
     public String findMovieById(int id);
 
-    public int importClient(ArrayList<Client> list);
+    public void importClient(ArrayList<Client> list);
 
-    public int importSupply(ArrayList<Supply> list);
+    public void importSupplyCenter(ArrayList<SupplyCenter> list);
 
-    public int importSalesman(ArrayList<Salesman> list);
+    public void importSalesman(ArrayList<Salesman> list);
 
-    public int importProduct(ArrayList<Product> list);
+    public void importProduct(ArrayList<Product> list);
 
-    public int importModel(ArrayList<Model> list);
+    public void importModel(ArrayList<Model> list);
 
-    public int importOrder(ArrayList<Order> list);
+    public void importOrder(ArrayList<Order> list);
 
-    public int importContract(ArrayList<Contract> list);
+    public void importContract(ArrayList<Contract> list);
 
     class Client {
         public String enterprise_name;
@@ -49,12 +49,12 @@ public interface DataManipulation {
         }
     }
 
-    class Supply {
+    class SupplyCenter {
         public String area;
         public String surname;
         public String firstname;
 
-        public Supply(String[] info) {
+        public SupplyCenter(String[] info) {
             area = info[2];
             String[] name = info[14].split(" ");
             surname = name[1];
@@ -68,6 +68,7 @@ public interface DataManipulation {
         public String surname;
         public String phone_number;
         public String gender;
+        public String supply_center;
         int age;
 
         public Salesman(String[] info) {
@@ -78,6 +79,7 @@ public interface DataManipulation {
             phone_number = info[19];
             gender = info[17];
             age = Integer.parseInt(info[18]);
+            supply_center = info[2];
         }
     }
 
