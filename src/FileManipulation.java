@@ -4,13 +4,11 @@ import java.util.*;
 public class FileManipulation implements DataManipulation {
 
     @Override
-    public int importData() {
-        return 0;
+    public void importData() {
     }
 
     @Override
-    public int createTable() {
-        return 0;
+    public void createTable() {
     }
 
     @Override
@@ -155,38 +153,36 @@ public class FileManipulation implements DataManipulation {
     }
 
     @Override
-    public int importClient(ArrayList<Client> list) {
-        return 0;
+    public void importClient(ArrayList<Client> list) {
+
     }
 
     @Override
-    public int importSupply(ArrayList<Supply> list) {
-        return 0;
+    public void importSupplyCenter(ArrayList<SupplyCenter> list) {
+
     }
 
     @Override
-    public int importSalesman(ArrayList<Salesman> list) {
-        return 0;
+    public void importSalesman(ArrayList<Salesman> list) {
     }
 
     @Override
-    public int importProduct(ArrayList<Product> list) {
-        return 0;
+    public void importProduct(ArrayList<Product> list) {
     }
 
     @Override
-    public int importModel(ArrayList<Model> list) {
-        return 0;
+    public void importModel(ArrayList<Model> list) {
+
     }
 
     @Override
-    public int importOrder(ArrayList<Order> list) {
-        return 0;
+    public void importOrder(ArrayList<Order> list) {
+
     }
 
     @Override
-    public int importContract(ArrayList<Contract> list) {
-        return 0;
+    public void importContract(ArrayList<Contract> list) {
+
     }
 
     class FullInformation {
