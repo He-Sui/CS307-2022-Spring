@@ -10,11 +10,12 @@ import java.util.Set;
 public class DatabaseManipulation implements DataManipulation {
     private Connection con = null;
     private ResultSet resultSet;
-    private String host = "172.23.208.1";
+    private String host = "localhost";
     private String dbname = "contract";
     private String user = "checker";
     private String pwd = "123456";
     private String port = "5432";
+    private static final int BATCH_SIZE = 500;
 
     @Override
     public void openDatasource() {
@@ -29,7 +30,7 @@ public class DatabaseManipulation implements DataManipulation {
         try {
             String url = "jdbc:postgresql://" + host + ":" + port + "/" + dbname;
             con = DriverManager.getConnection(url, user, pwd);
-
+            con.setAutoCommit(false);
         } catch (SQLException e) {
             System.err.println("Database connection failed");
             System.err.println(e.getMessage());
@@ -156,8 +157,7 @@ public class DatabaseManipulation implements DataManipulation {
     }
 
     @Override
-    public int importData() {
-        int result = 0;
+    public void importData() {
         String line;
         Set<String> area = new HashSet<>();
         Set<String> enterprise_name = new HashSet<>();
@@ -167,7 +167,7 @@ public class DatabaseManipulation implements DataManipulation {
         Set<String> contract = new HashSet<>();
         ArrayList<Client> client_list = new ArrayList<>();
         ArrayList<Contract> contract_list = new ArrayList<>();
-        ArrayList<Supply> supply_list = new ArrayList<>();
+        ArrayList<SupplyCenter> supply_list = new ArrayList<>();
         ArrayList<Salesman> salesman_list = new ArrayList<>();
         ArrayList<Product> product_list = new ArrayList<>();
         ArrayList<Model> model_list = new ArrayList<>();
@@ -178,7 +178,7 @@ public class DatabaseManipulation implements DataManipulation {
                 String[] info = line.split(",");
                 if (!area.contains(info[2])) {
                     area.add(info[2]);
-                    supply_list.add(new Supply(info));
+                    supply_list.add(new SupplyCenter(info));
                 }
                 if (!enterprise_name.contains(info[1])) {
                     enterprise_name.add(info[1]);
@@ -202,7 +202,7 @@ public class DatabaseManipulation implements DataManipulation {
                 }
                 order_list.add(new Order(info));
             }
-            importSupply(supply_list);
+            importSupplyCenter(supply_list);
             importClient(client_list);
             importSalesman(salesman_list);
             importProduct(product_list);
@@ -210,198 +210,223 @@ public class DatabaseManipulation implements DataManipulation {
             importContract(contract_list);
             importOrder(order_list);
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Failed to import data from file.");
+            System.err.println(e.getMessage());
         }
-
-
-        return result;
     }
 
     @Override
-    public int importClient(ArrayList<Client> list) {
-        StringBuilder sb = new StringBuilder("insert into Client (enterprise_name, country, industry, city) values ");
-        StringBuilder sql = new StringBuilder("(?,?,?,?)");
-        int result = 0;
-        int total = list.size();
-        for (int i = 0; i < total - 1; ++i)
-            sb.append(sql).append(',');
-        sb.append(sql).append(';');
+    public void importClient(ArrayList<Client> list) {
+        String sql = "insert into Client (enterprise_name, country, industry, city) values (?,?,?,?)";
         try {
-            PreparedStatement preparedStatement = con.prepareStatement(sb.toString());
-            int index = 1;
+            PreparedStatement preparedStatement = con.prepareStatement(sql);
+            int cnt = 0;
             for (Client client : list) {
-                preparedStatement.setString(index++, client.enterprise_name);
-                preparedStatement.setString(index++, client.country);
-                preparedStatement.setString(index++, client.industry);
-                preparedStatement.setString(index++, client.city);
-            }
-            result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-    @Override
-    public int importSupply(ArrayList<Supply> list) {
-        StringBuilder sb = new StringBuilder("insert into Supply (area, director_firstname, director_surname) values ");
-        StringBuilder sql = new StringBuilder("(?,?,?)");
-        int result = 0;
-        int total = list.size();
-        for (int i = 0; i < total - 1; ++i)
-            sb.append(sql).append(',');
-        sb.append(sql).append(';');
-        try {
-            PreparedStatement preparedStatement = con.prepareStatement(sb.toString());
-            int index = 1;
-            for (Supply supply : list) {
-                preparedStatement.setString(index++, supply.area);
-                preparedStatement.setString(index++, supply.firstname);
-                preparedStatement.setString(index++, supply.surname);
-            }
-            result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-    @Override
-    public int importSalesman(ArrayList<Salesman> list) {
-        StringBuilder sb = new StringBuilder("insert into salesman (number, firstname, surname, phone_number, gender, age) values ");
-        StringBuilder sql = new StringBuilder("(?,?,?,?,?,?)");
-        int result = 0;
-        int total = list.size();
-        for (int i = 0; i < total - 1; ++i)
-            sb.append(sql).append(',');
-        sb.append(sql).append(';');
-        try {
-            PreparedStatement preparedStatement = con.prepareStatement(sb.toString());
-            int index = 1;
-            for (Salesman salesman : list) {
-                preparedStatement.setString(index++, salesman.number);
-                preparedStatement.setString(index++, salesman.first_name);
-                preparedStatement.setString(index++, salesman.surname);
-                preparedStatement.setString(index++, salesman.phone_number);
-                preparedStatement.setString(index++, salesman.gender);
-                preparedStatement.setInt(index++, salesman.age);
-            }
-            result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-    @Override
-    public int importProduct(ArrayList<Product> list) {
-        StringBuilder sb = new StringBuilder("insert into product (code, name) values ");
-        StringBuilder sql = new StringBuilder("(?,?)");
-        int result = 0;
-        int total = list.size();
-        for (int i = 0; i < total - 1; ++i)
-            sb.append(sql).append(',');
-        sb.append(sql).append(';');
-        try {
-            PreparedStatement preparedStatement = con.prepareStatement(sb.toString());
-            int index = 1;
-            for (Product product : list) {
-                preparedStatement.setString(index++, product.code);
-                preparedStatement.setString(index++, product.name);
-            }
-            result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-    @Override
-    public int importModel(ArrayList<Model> list) {
-        StringBuilder sb = new StringBuilder("insert into model (model, product_code) values ");
-        StringBuilder sql = new StringBuilder("(?,?)");
-        int result = 0;
-        int total = list.size();
-        for (int i = 0; i < total - 1; ++i)
-            sb.append(sql).append(',');
-        sb.append(sql).append(';');
-        try {
-            PreparedStatement preparedStatement = con.prepareStatement(sb.toString());
-            int index = 1;
-            for (Model model : list) {
-                preparedStatement.setString(index++, model.model);
-                preparedStatement.setString(index++, model.product_code);
-            }
-            result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-    @Override
-    public int importOrder(ArrayList<Order> list) {
-        int result = 0;
-        try {
-            PreparedStatement preparedStatement = con.prepareStatement("insert into orders (product_model, contract_number, salesman_number, quantity, unit_price, estimated_delivery_date, lodgement_date) values (?,?,?,?,?,?,?);");
-            int index = 1;
-            for (int i = 0; i < list.size(); ++i) {
-                if (i % 4680 == 0) {
-                    if (i != 0)
-                        preparedStatement.executeUpdate();
-                    index = 1;
-                    StringBuilder sb = new StringBuilder("insert into orders (product_model, contract_number, salesman_number, quantity, unit_price, estimated_delivery_date, lodgement_date) values ");
-                    StringBuilder sql = new StringBuilder("(?,?,?,?,?,?,?)");
-                    int count = Math.min(list.size() - i - 1, 4679);
-                    for (int j = 0; j < count; ++j)
-                        sb.append(sql).append(',');
-                    sb.append(sql).append(';');
-                    preparedStatement = con.prepareStatement(sb.toString());
+                preparedStatement.setString(1, client.enterprise_name);
+                preparedStatement.setString(2, client.country);
+                preparedStatement.setString(3, client.industry);
+                preparedStatement.setString(4, client.city);
+                preparedStatement.addBatch();
+                if (++cnt % BATCH_SIZE == 0) {
+                    preparedStatement.executeBatch();
+                    preparedStatement.clearBatch();
                 }
-                Order order = list.get(i);
-                preparedStatement.setString(index++, order.product_model);
-                preparedStatement.setString(index++, order.contract_number);
-                preparedStatement.setString(index++, order.salesman_number);
-                preparedStatement.setInt(index++, order.quantity);
-                preparedStatement.setInt(index++, order.unit_price);
-                preparedStatement.setDate(index++, order.estimated_delivery_date);
-                preparedStatement.setDate(index++, order.lodgement_date);
             }
-            result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            if (cnt % BATCH_SIZE != 0)
+                preparedStatement.executeBatch();
+            con.commit();
+        } catch (SQLException se) {
+            System.err.println("SQL error: " + se.getMessage());
+            try {
+                con.rollback();
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+            }
         }
-        return result;
     }
 
     @Override
-    public int importContract(ArrayList<Contract> list) {
-        StringBuilder sb = new StringBuilder("insert into contract (number, client_name, supply_area, date) values ");
-        StringBuilder sql = new StringBuilder("(?,?,?,?)");
-        int result = 0;
-        int total = list.size();
-        for (int i = 0; i < total - 1; ++i)
-            sb.append(sql).append(',');
-        sb.append(sql).append(';');
-
+    public void importSupplyCenter(ArrayList<SupplyCenter> list) {
+        String sql = "insert into supply_center (area, director_firstname, director_surname) values (?,?,?)";
         try {
-            PreparedStatement preparedStatement = con.prepareStatement(sb.toString());
-            int index = 1;
-            for (Contract contract : list) {
-                preparedStatement.setString(index++, contract.number);
-                preparedStatement.setString(index++, contract.client_name);
-                preparedStatement.setString(index++, contract.supply_area);
-                preparedStatement.setDate(index++, contract.date);
+            PreparedStatement preparedStatement = con.prepareStatement(sql);
+            int cnt = 0;
+            for (SupplyCenter supply : list) {
+                preparedStatement.setString(1, supply.area);
+                preparedStatement.setString(2, supply.firstname);
+                preparedStatement.setString(3, supply.surname);
+                preparedStatement.addBatch();
+                if (++cnt % BATCH_SIZE == 0) {
+                    preparedStatement.executeBatch();
+                    preparedStatement.clearBatch();
+                }
             }
-            result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            if (cnt % BATCH_SIZE != 0)
+                preparedStatement.executeBatch();
+            con.commit();
+        } catch (SQLException se) {
+            System.err.println("SQL error: " + se.getMessage());
+            try {
+                con.rollback();
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+            }
         }
-        return result;
     }
 
     @Override
-    public int createTable() {
+    public void importSalesman(ArrayList<Salesman> list) {
+        String sql = "insert into salesman (number, firstname, surname, phone_number, gender, age, supply_center) values (?,?,?,?,?,?,?)";
+        try {
+            PreparedStatement preparedStatement = con.prepareStatement(sql);
+            int cnt = 0;
+            for (Salesman salesman : list) {
+                preparedStatement.setString(1, salesman.number);
+                preparedStatement.setString(2, salesman.first_name);
+                preparedStatement.setString(3, salesman.surname);
+                preparedStatement.setString(4, salesman.phone_number);
+                preparedStatement.setString(5, salesman.gender);
+                preparedStatement.setInt(6, salesman.age);
+                preparedStatement.setString(7, salesman.supply_center);
+                preparedStatement.addBatch();
+                if (++cnt % BATCH_SIZE == 0) {
+                    preparedStatement.executeBatch();
+                    preparedStatement.clearBatch();
+                }
+            }
+            if (cnt % BATCH_SIZE != 0)
+                preparedStatement.executeBatch();
+            con.commit();
+        } catch (SQLException se) {
+            System.err.println("SQL error: " + se.getMessage());
+            try {
+                con.rollback();
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public void importProduct(ArrayList<Product> list) {
+        String sql = "insert into product (code, name) values (?,?)";
+        try {
+            PreparedStatement preparedStatement = con.prepareStatement(sql);
+            int cnt = 0;
+            for (Product product : list) {
+                preparedStatement.setString(1, product.code);
+                preparedStatement.setString(2, product.name);
+                preparedStatement.addBatch();
+                if (++cnt % BATCH_SIZE == 0) {
+                    preparedStatement.executeBatch();
+                    preparedStatement.clearBatch();
+                }
+            }
+            if (cnt % BATCH_SIZE != 0)
+                preparedStatement.executeBatch();
+            con.commit();
+        } catch (SQLException se) {
+            System.err.println("SQL error: " + se.getMessage());
+            try {
+                con.rollback();
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public void importModel(ArrayList<Model> list) {
+        String sql = "insert into model (model, product_code) values (?,?)";
+        try {
+            PreparedStatement preparedStatement = con.prepareStatement(sql);
+            int cnt = 0;
+            for (Model model : list) {
+                preparedStatement.setString(1, model.model);
+                preparedStatement.setString(2, model.product_code);
+                preparedStatement.addBatch();
+                if (++cnt % BATCH_SIZE == 0) {
+                    preparedStatement.executeBatch();
+                    preparedStatement.clearBatch();
+                }
+            }
+            if (cnt % BATCH_SIZE != 0)
+                preparedStatement.executeBatch();
+            con.commit();
+        } catch (SQLException se) {
+            System.err.println("SQL error: " + se.getMessage());
+            try {
+                con.rollback();
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public void importOrder(ArrayList<Order> list) {
+        try {
+            PreparedStatement preparedStatement = con.prepareStatement("insert into orders (product_model, contract_number, salesman_number, quantity, unit_price, estimated_delivery_date, lodgement_date) values (?,?,?,?,?,?,?)");
+            int cnt = 0;
+            for (Order order : list) {
+                preparedStatement.setString(1, order.product_model);
+                preparedStatement.setString(2, order.contract_number);
+                preparedStatement.setString(3, order.salesman_number);
+                preparedStatement.setInt(4, order.quantity);
+                preparedStatement.setInt(5, order.unit_price);
+                preparedStatement.setDate(6, order.estimated_delivery_date);
+                preparedStatement.setDate(7, order.lodgement_date);
+                preparedStatement.addBatch();
+                if (++cnt % BATCH_SIZE == 0) {
+                    preparedStatement.executeBatch();
+                    preparedStatement.clearBatch();
+                }
+            }
+            if (cnt % BATCH_SIZE != 0)
+                preparedStatement.executeBatch();
+            con.commit();
+        } catch (SQLException se) {
+            System.err.println("SQL error: " + se.getMessage());
+            try {
+                con.rollback();
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public void importContract(ArrayList<Contract> list) {
+        String sql = "insert into contract (number, client_name, supply_area, date) values (?,?,?,?)";
+        try {
+            PreparedStatement preparedStatement = con.prepareStatement(sql);
+            int cnt = 0;
+            for (Contract contract : list) {
+                preparedStatement.setString(1, contract.number);
+                preparedStatement.setString(2, contract.client_name);
+                preparedStatement.setString(3, contract.supply_area);
+                preparedStatement.setDate(4, contract.date);
+                preparedStatement.addBatch();
+                if (++cnt % BATCH_SIZE == 0) {
+                    preparedStatement.executeBatch();
+                    preparedStatement.clearBatch();
+                }
+            }
+            if (cnt % BATCH_SIZE != 0)
+                preparedStatement.executeBatch();
+            con.commit();
+        } catch (SQLException se) {
+            System.err.println("SQL error: " + se.getMessage());
+            try {
+                con.rollback();
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public void createTable() {
         String sql = "create table client(\n" +
                 "    enterprise_name  varchar primary key,\n" +
                 "    country varchar not null,\n" +
@@ -409,7 +434,7 @@ public class DatabaseManipulation implements DataManipulation {
                 "    city varchar\n" +
                 "\n" +
                 ");\n" +
-                "create table supply(\n" +
+                "create table supply_center(\n" +
                 "    area varchar primary key,\n" +
                 "    director_firstname varchar not null,\n" +
                 "    director_surname varchar not null\n" +
@@ -417,7 +442,7 @@ public class DatabaseManipulation implements DataManipulation {
                 "create table contract(\n" +
                 "   number varchar primary key,\n" +
                 "   client_name varchar not null constraint contract_fk1 references client(enterprise_name),\n" +
-                "   supply_area  varchar not null constraint contract_fk2 references supply(area)              ,\n" +
+                "   supply_area  varchar not null constraint contract_fk2 references supply_center(area),\n" +
                 "   date DATE not null\n" +
                 ");\n" +
                 "create table product(\n" +
@@ -435,7 +460,8 @@ public class DatabaseManipulation implements DataManipulation {
                 "    surname varchar not null ,\n" +
                 "    phone_number varchar(11) not null ,\n" +
                 "    gender varchar not null ,\n" +
-                "    age integer not null\n" +
+                "    age integer not null,\n" +
+                "    supply_center varchar not null constraint salesman_fk references supply_center(area)\n" +
                 ");\n" +
                 "\n" +
                 "\n" +
@@ -450,13 +476,16 @@ public class DatabaseManipulation implements DataManipulation {
                 "    constraint uq unique (product_model,contract_number),\n" +
                 "    constraint orders_pk primary key (product_model,contract_number)\n" +
                 ");\n";
-        int result = 0;
         try {
             PreparedStatement preparedStatement = con.prepareStatement(sql);
-            result = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            preparedStatement.executeUpdate();
+        } catch (SQLException se) {
+            System.err.println("SQL error: " + se.getMessage());
+            try {
+                con.rollback();
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+            }
         }
-        return result;
     }
 }
