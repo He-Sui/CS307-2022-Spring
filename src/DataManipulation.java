@@ -6,19 +6,12 @@ public interface DataManipulation {
 
     public void createTable();
 
+    public void deleteTable();
+
     public void openDatasource();
 
     public void closeDatasource();
 
-    public int addOneMovie(String str);
-
-    public String allContinentNames();
-
-    public String continentsWithCountryCount();
-
-    public String FullInformationOfMoviesRuntime(int min, int max);
-
-    public String findMovieById(int id);
 
     public void importClient(ArrayList<Client> list);
 
@@ -34,6 +27,20 @@ public interface DataManipulation {
 
     public void importContract(ArrayList<Contract> list);
 
+    public String findOrdersSoldBySalesmen(String firstname, String surname);
+
+    public String findOrdersByProductModel(String model);
+
+    public String findOrdersByModelAndContract(String model, String contract_number);
+
+    public String selectDistinctModelContractSalesman(int index);
+
+    public String findNumberOfProductInContractsMoreThanXInOrder(int x);
+
+    public void updateQuantity(String ContractNumber, String model, int newQuantity);
+
+    public void deleteModel(String model);
+
     class Client {
         public String enterprise_name;
         public String country;
@@ -47,6 +54,14 @@ public interface DataManipulation {
                 city = info[4];
             industry = info[5];
         }
+
+        public Client(String enterprise_name, String country, String city, String industry) {
+            this.enterprise_name = enterprise_name;
+            if (!(city.equals("NULL") || city.equals("null")))
+                this.city = city;
+            this.country = country;
+            this.industry = industry;
+        }
     }
 
     class SupplyCenter {
@@ -59,6 +74,12 @@ public interface DataManipulation {
             String[] name = info[14].split(" ");
             surname = name[1];
             firstname = name[0];
+        }
+
+        public SupplyCenter(String area, String surname, String firstname) {
+            this.area = area;
+            this.surname = surname;
+            this.firstname = firstname;
         }
     }
 
@@ -81,6 +102,16 @@ public interface DataManipulation {
             age = Integer.parseInt(info[18]);
             supply_center = info[2];
         }
+
+        public Salesman(String number, String first_name, String surname, String phone_number, String gender, String age, String supply_center) {
+            this.number = number;
+            this.first_name = first_name;
+            this.surname = surname;
+            this.phone_number = phone_number;
+            this.gender = gender;
+            this.supply_center = supply_center;
+            this.age = Integer.parseInt(age);
+        }
     }
 
     class Product {
@@ -91,15 +122,28 @@ public interface DataManipulation {
             code = info[6];
             name = info[7];
         }
+
+        public Product(String code, String name) {
+            this.code = code;
+            this.name = name;
+        }
     }
 
     class Model {
         public String model;
         public String product_code;
+        int unit_price;
 
         public Model(String[] info) {
             model = info[8];
             product_code = info[6];
+            unit_price = Integer.parseInt(info[9]);
+        }
+
+        public Model(String model, String price, String product_code) {
+            this.model = model;
+            this.product_code = product_code;
+            unit_price = Integer.parseInt(price);
         }
     }
 
@@ -115,14 +159,21 @@ public interface DataManipulation {
             supply_area = info[2];
             date = Date.valueOf(info[11]);
         }
+
+        public Contract(String number, String client_name, String supply_area, String date) {
+            this.number = number;
+            this.client_name = client_name;
+            this.supply_area = supply_area;
+            this.date = Date.valueOf(date);
+        }
     }
 
     class Order {
+        int id;
         String product_model;
         String contract_number;
         String salesman_number;
         int quantity;
-        int unit_price;
         Date estimated_delivery_date;
         Date lodgement_date;
 
@@ -131,10 +182,33 @@ public interface DataManipulation {
             contract_number = info[0];
             salesman_number = info[16];
             quantity = Integer.parseInt(info[10]);
-            unit_price = Integer.parseInt(info[9]);
-            estimated_delivery_date = Date.valueOf(info[12]);
+            if (!info[12].equals(""))
+                estimated_delivery_date = Date.valueOf(info[12]);
             if (!info[13].equals(""))
                 lodgement_date = Date.valueOf(info[13]);
+        }
+
+        public Order(String product_model, String contract_number, String salesman_number, String quantity, String estimated_delivery_date, String lodgement_date) {
+            this.product_model = product_model;
+            this.contract_number = contract_number;
+            this.salesman_number = salesman_number;
+            this.quantity = Integer.parseInt(quantity);
+            this.estimated_delivery_date = Date.valueOf(estimated_delivery_date);
+            if (!(lodgement_date.equals("") || lodgement_date.equals("null")))
+                this.lodgement_date = Date.valueOf(lodgement_date);
+
+        }
+
+        public Order(String id, String product_model, String contract_number, String salesman_number, String quantity, String estimated_delivery_date, String lodgement_date) {
+            this.id = Integer.parseInt(id);
+            this.product_model = product_model;
+            this.contract_number = contract_number;
+            this.salesman_number = salesman_number;
+            this.quantity = Integer.parseInt(quantity);
+            this.estimated_delivery_date = Date.valueOf(estimated_delivery_date);
+            if (!(lodgement_date.equals("") || lodgement_date.equals("null")))
+                this.lodgement_date = Date.valueOf(lodgement_date);
+
         }
     }
 }
